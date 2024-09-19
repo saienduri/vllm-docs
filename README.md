@@ -222,6 +222,72 @@ For more information about the parameters, please run
 
 Tensor parallism (TP) parameters depends on the model size. For Llama 3.1 70B and 8B model, TP 1 can be used as well for MI300X. In general, TP 8 and 1 is recommended to achieve the optimum performance. 
 
+##### Online Server Benchmark
+ 
+Make the following changes if required
+ 
+/app/vllm/benchmarks/backend_request_func.py
+ 
+line 242 + "ignore_eos": True,
+ 
+/app/vllm/benchmarks/benchmark_serving.py
+line 245 -         interval = np.random.exponential(1.0 / request_rate)
+line 245 +         ## interval = np.random.exponential(1.0 / request_rate)
+line 246 +         interval = 1.0 / request_rate
+ 
+Benchmark Meta-Llama-3.1-70B with input 4096 tokens, output 512 tokens and tensor parallelism 8 as an example,
+ 
+    vllm serve /data/llm/Meta-Llama-3.1-70B-Instruct-FP8-KV \
+    --swap-space 16 \
+    --disable-log-requests \
+    --quantization fp8 \
+    --kv-cache-dtype fp8 \
+    --dtype float16 \
+    --max-model-len 8192 \
+    --tensor-parallel-size 8
+ 
+Change port (for example --port 8005) if port=8000 is currently being used by other processes.
+ 
+run client in a separate terminal. Use port_id from previous step else port-id=8000.
+ 
+    python /app/vllm/benchmarks/benchmark_serving.py \
+    --port 8000 \
+    --model /data/llm/Meta-Llama-3.1-70B-Instruct-FP8-KV \
+    --dataset-name random \
+    --random-input-len 4096 \
+    --random-output-len 512 \
+    --request-rate 1 \
+    --num-prompts 500 \
+    --percentile-metrics ttft,tpot,itl,e2el
+ 
+Once all prompts are processed, terminate the server gracefully (ctrl+c).
+ 
+##### CPX mode
+ 
+Currently only CPX-NPS1 mode is supported. So ONLY tp=1 is supported in CPX mode.
+But multiple instances can be started simultaneously (if needed) in CPX-NPS1 mode.
+ 
+Set GPUs in CPX mode
+ 
+    rocm-smi --setcomputepartition cpx
+ 
+Example of running Llama3.1-8B on 1 CPX-NPS1 GPU with input 4096 and output 512. As mentioned above, tp=1.
+    HIP_VISIBLE_DEVICES=0 \
+    python3 /app/vllm/benchmarks/benchmark_throughput.py \
+    --max-model-len 4608 \
+    --num-scheduler-steps 10 \
+    --num-prompts 100 \
+    --model /data/llm/Meta-Llama-3.1-70B-Instruct-FP8-KV \
+    --input-len 4096 \
+    --output-len 512 \
+    --dtype float16 \
+    --tensor-parallel-size 1 \
+    --output-json <path/to/output.json> \
+    --quantization fp8 \
+    --gpu-memory-utilization 0.99
+ 
+Set GPU to SPX mode.
+    rocm-smi --setcomputepartition spx
 
 ### MMLU_PRO_Biology Accuracy Eval
  
