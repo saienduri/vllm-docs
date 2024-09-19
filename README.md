@@ -308,15 +308,6 @@ vllm (pretrained=models--meta-llama--Meta-Llama-3.1-405B-Instruct/snapshots/0699
 
 ## Performance
 
-### LLaMA3 405B
-
-| Llama3.1 405B (fp8, tp 8) | MI300X (vllm)  |  H100 (trt-llm 0.12.0) | MI300X / H100 |
-|--|--|--|--|
-|128/128 |	1950.3	|2352	|0.829209184 |
-|128/2048	| 2459.8	|1232	|1.996590909 |
-|2048/128 |	295.4	|305	|0.96852459 |
-|2048/2048 | 1501.2	|645	|2.32744186 |
-
 ### LLaMA2/3 *MLPerf* 70B
 
 Please refer to the MLPerf instructions for recreating the MLPerf numbers.
