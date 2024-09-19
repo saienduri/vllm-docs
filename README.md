@@ -12,7 +12,7 @@ It includes:
 
    · ROCm™ 6.2
 
-   · vLLM 0.6.0
+   · vLLM 0.6.1
 
    · PyTorch 2.5dev (nightly)
 
@@ -48,7 +48,24 @@ You can pull the image with `docker pull powderluv/vllm_dev_channel:ROCm6.2_hipb
 
 ## Reproducing benchmark results
 
-### Download the model
+### Use pre-quantized models
+
+To make it easier to run fp8 Llama 3.1 models on MI300X, the quantized checkpoints are available on AMD Huggingface space as follows 
+
+- https://huggingface.co/amd/Meta-Llama-3.1-8B-Instruct-FP8-KV 
+- https://huggingface.co/amd/Meta-Llama-3.1-70B-Instruct-FP8-KV 
+- https://huggingface.co/amd/Meta-Llama-3.1-405B-Instruct-FP8-KV
+- https://huggingface.co/amd/grok-1-FP8-KV
+
+Currently these models are private. Please join https://huggingface.co/amd to access. 
+
+Download the model you want to run.  
+
+These FP8 quantized checkpoints were generated with AMD’s Quark Quantizer. For more information about Quark, please refer to https://quark.docs.amd.com/latest/quark_example_torch_llm_gen.html
+
+### Quantize your own models
+This step is optional for you to use quantized models on your own. Take Llama 3.1 405B as an example. 
+
 Download the Model View the Meta-Llama-3.1-405B model at https://huggingface.co/meta-llama/Meta-Llama-3.1-405B. Ensure that you have been granted access, and apply for it if you do not have access.
 
 If you do not already have a HuggingFace token, open your user profile (https://huggingface.co/settings/profile), select "Access Tokens", press "+ Create New Token", and create a new Read token.
@@ -73,31 +90,47 @@ Download the model
 
 Similarly, you can download Meta-Llama-3.1-70B and Meta-Llama-3.1-8B.
 
-### Model Preparation
+[Download and install Quark](https://quark.docs.amd.com/latest/install.html)
 
-To make it easier to run fp8 Llama 3.1 models on MI300X, the quantized checkpoints are available on AMD Huggingface space as follows 
+Run the quantization script in the example folder using the following command line:
+export MODEL_DIR = [local model checkpoint folder] or meta-llama/Meta-Llama-3.1-405B-Instruct
+# single GPU
+python3 quantize_quark.py \ 
+        --model_dir $MODEL_DIR \
+        --output_dir Meta-Llama-3.1-405B-Instruct-FP8-KV \                           
+        --quant_scheme w_fp8_a_fp8 \
+        --kv_cache_dtype fp8 \
+        --num_calib_data 128 \
+        --model_export quark_safetensors \
+        --no_weight_matrix_merge
 
-- https://huggingface.co/amd/Meta-Llama-3.1-8B-Instruct-fp8-quark-vllm 
-- https://huggingface.co/amd/Meta-Llama-3.1-70B-Instruct-fp8-quark-vllm 
-- https://huggingface.co/amd/Meta-Llama-3.1-405B-Instruct-fp8-quark-vllm
+# If model size is too large for single GPU, please use multi GPU instead.
+python3 quantize_quark.py \ 
+        --model_dir $MODEL_DIR \
+        --output_dir Meta-Llama-3.1-405B-Instruct-FP8-KV \                           
+        --quant_scheme w_fp8_a_fp8 \
+        --kv_cache_dtype fp8 \
+        --num_calib_data 128 \
+        --model_export quark_safetensors \
+        --no_weight_matrix_merge \
+        --multi_gpu
 
-Download the model you want to run. For 70B and 405B models, there is an extra step to use the merge.py to merge the splitted llama-*.safetensors into a single llama.safetensors for vLLM. Then move llama.safetensors and llama.json to the saved directory of Meta-Llama-3.1 models in the Step 1.
 
-Take Meta-Llama-3.1-405B as an example,
+### Launch AMD vLLM Docker
 
-Create the directory for llama.safetensors and llama.json
+Download and launch the docker,
 
-    sudo mkdir -p /data/llama-3.1/Meta-Llama-3.1-405B/quantized
-    
-    cp llama.json /data/llama-3.1/Meta-Llama-3.1-405B/quantized
-    
-    cp llama.safetensors /data/llama-3.1/Meta-Llama-3.1-405B/quantized
+    docker run -it --rm --ipc=host --network=host --group-add render \
+    --privileged --security-opt seccomp=unconfined \
+    --cap-add=CAP_SYS_ADMIN --cap-add=SYS_PTRACE \
+    --device=/dev/kfd --device=/dev/dri --device=/dev/mem \
+    -v /data/llama-3.1:/data/llm \
+    powderluv/vllm_dev_channel:ROCm6.2_hipblaslt0.10.0_pytorch2.5_vllm0.6.1_cython_09192024
 
-For more details, please refer to the model card of Meta-Llama-3.1-70B-Instruct-fp8-quark-vllm and Meta-Llama-3.1-405B-Instruct-fp8-quark-vllm.
 
-These FP8 quantized checkpoints were generated with AMD’s Quark Quantizer. For more information about Quark, please refer to https://quark.docs.amd.com/latest/quark_example_torch_llm_gen.html
+### Benchmark with AMD vLLM Docker
 
-### System Settings
+There are some system settings to be configured for optimum performance on MI300X. 
 
 #### NUMA balancing setting
 
@@ -118,6 +151,9 @@ Some environment variables enhance the performance of the vLLM kernels and PyTor
 
 ##### vLLM performance settings
 
+    export PYTORCH_TUNABLEOP_ENABLED=1
+    export PYTORCH_TUNABLEOP_ROCBLAS_ENABLED=0
+    export PYTORCH_TUNABLEOP_TUNING=1
     export HIP_FORCE_DEV_KERNARG=1
     export VLLM_USE_ROCM_CUSTOM_PAGED_ATTN=1
     export VLLM_USE_TRITON_FLASH_ATTN=0
@@ -132,40 +168,59 @@ Some environment variables enhance the performance of the vLLM kernels and PyTor
     export VLLM_FP8_REDUCE_CONV=1
     export VLLM_SCHED_PREFILL_KVC_FREEPCT=31.0
 
-#### Benchmark with AMD vLLM Docker
+You can set both PYTORCH_TUNABLEOP_ENABLED and PYTORCH_TUNABLEOP_TUNING to 1 to performance GEMM tuning for the 1st benchmark run. 
+It will take some time to complete the tuning during the benchmark. After tuning, it will generate several csv files as the performance lookup database. For the subsequent benchmark runs, you can keep PYTORCH_TUNABLEOP_ENABLED as 1 and set 
+PYTORCH_TUNABLEOP_TUNING to 0 to use the selected kernels. 
 
-Download and launch the docker,
 
-    docker run -it --rm --ipc=host --network=host --group-add render \
-    --privileged --security-opt seccomp=unconfined \
-    --cap-add=CAP_SYS_ADMIN --cap-add=SYS_PTRACE \
-    --device=/dev/kfd --device=/dev/dri --device=/dev/mem \
-    -v /data/llama-3.1:/data/llm \
-    docker.gpuperf:5000/dcgpu-rocm/vllm_fp8_throughput:20240826b
+##### Latency Benchmark
+
+Benchmark Meta-Llama-3.1-405B with input 128 tokens, output 128 tokens, batch size 32 and tensor parallelism 8 as an example,
+
+python /app/vllm/benchmarks/benchmark_latency.py \
+    --model /data/llm/Meta-Llama-3.1-405B-Instruct-FP8-KV \
+    --quantization fp8 \
+    --kv-cache-dtype fp8 \
+    --dtype half \
+    --gpu-memory-utilization 0.99 \
+    --distributed-executor-backend mp \
+    --tensor-parallel-size 8 \
+    --batch size 32 \
+    --input-len 128 \
+    --output-len 128
+
+You can change various input-len, output-len, batch size and run the benchmark as well. When output-len is 1, it measures prefill latency (TTFT). 
+Decoding latency (TPOT) can be calculated based on the measured latency. 
+
+For more information about the parameters, please run
+
+    /app/vllm/benchmarks/benchmark_latency.py -h
+
+##### Throughput Benchmark
 
 Benchmark Meta-Llama-3.1-405B with input 128 tokens, output 128 tokens and tensor parallelism 8 as an example,
 
-#### Inside the container:
-
-    torchrun --standalone --nproc_per_node=8 /app/vllm/benchmarks/benchmark_throughput.py \
-    --model /data/llm/Meta-Llama-3.1-405B \
-    --quantized-weights-path /quantized/llama.safetensors \
+    python /app/vllm/benchmarks/benchmark_throughput.py \
+    --model /data/llm/Meta-Llama-3.1-405B-Instruct-FP8-KV \
     --quantization fp8 \
     --kv-cache-dtype fp8 \
-    --dtype float16 \
-    --max-num-batched-tokens 65536 \
+    --dtype half \
     --gpu-memory-utilization 0.99 \
-    --max-model-len 8192 \
     --num-prompts 2000 \
+    --distributed-executor-backend mp \
+    --num-scheduler-steps 10 \
     --tensor-parallel-size 8 \
     --input-len 128 \
     --output-len 128
 
-You can change to the other models with various input and output length and run the benchmark as well.
+You can change various input-len, output-len, num-prompts and run the benchmark as well.
+Please note num-scheduler-step is a new feature added in vLLM 0.6.0. It can improve the decoding latency and throughput, however, it may increase the prefill latency.
 
 For more information about the parameters, please run
 
     /app/vllm/benchmarks/benchmark_throughput.py -h
+
+Tensor parallism (TP) parameters depends on the model size. For Llama 3.1 70B and 8B model, TP 1 can be used as well for MI300X. In general, TP 8 and 1 is recommended to achieve the optimum performance. 
 
 
 ### MMLU_PRO_Biology Accuracy Eval
