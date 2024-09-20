@@ -86,7 +86,7 @@ Create the directory for Llama 3.1 models (if it doesn't already exist)
 
 Download the model
 
-    huggingface-cli download meta-llama/Meta-Llama-3.1-405B --exclude "original/*" --local-dir /data/llama-3.1/Meta-Llama-3.1-405B
+    huggingface-cli download meta-llama/Meta-Llama-3.1-405B-Instruct --exclude "original/*" --local-dir /data/llama-3.1/Meta-Llama-3.1-405B-Instruct
 
 Similarly, you can download Meta-Llama-3.1-70B and Meta-Llama-3.1-8B.
 
@@ -95,7 +95,7 @@ Similarly, you can download Meta-Llama-3.1-70B and Meta-Llama-3.1-8B.
 Run the quantization script in the example folder using the following command line:
 export MODEL_DIR = [local model checkpoint folder] or meta-llama/Meta-Llama-3.1-405B-Instruct
 #### single GPU
-python3 quantize_quark.py \ 
+        python3 quantize_quark.py \ 
         --model_dir $MODEL_DIR \
         --output_dir Meta-Llama-3.1-405B-Instruct-FP8-KV \                           
         --quant_scheme w_fp8_a_fp8 \
@@ -105,7 +105,7 @@ python3 quantize_quark.py \
         --no_weight_matrix_merge
 
 #### If model size is too large for single GPU, please use multi GPU instead.
-python3 quantize_quark.py \ 
+        python3 quantize_quark.py \ 
         --model_dir $MODEL_DIR \
         --output_dir Meta-Llama-3.1-405B-Instruct-FP8-KV \                           
         --quant_scheme w_fp8_a_fp8 \
@@ -175,13 +175,25 @@ PYTORCH_TUNABLEOP_TUNING to 0 to use the selected kernels.
 
 ##### Latency Benchmark
 
-Benchmark Meta-Llama-3.1-405B with input 128 tokens, output 128 tokens, batch size 32 and tensor parallelism 8 as an example,
+Benchmark Meta-Llama-3.1-405B FP8 with input 128 tokens, output 128 tokens, batch size 32 and tensor parallelism 8 as an example,
 
-python /app/vllm/benchmarks/benchmark_latency.py \
+    python /app/vllm/benchmarks/benchmark_latency.py \
     --model /data/llm/Meta-Llama-3.1-405B-Instruct-FP8-KV \
     --quantization fp8 \
     --kv-cache-dtype fp8 \
     --dtype half \
+    --gpu-memory-utilization 0.99 \
+    --distributed-executor-backend mp \
+    --tensor-parallel-size 8 \
+    --batch size 32 \
+    --input-len 128 \
+    --output-len 128
+
+If you want to run Meta-Llama-3.1-405B FP16, please run
+
+    python /app/vllm/benchmarks/benchmark_latency.py \
+    --model /data/llm/Meta-Llama-3.1-405B-Instruct \
+    --dtype float16 \
     --gpu-memory-utilization 0.99 \
     --distributed-executor-backend mp \
     --tensor-parallel-size 8 \
@@ -198,13 +210,26 @@ For more information about the parameters, please run
 
 ##### Throughput Benchmark
 
-Benchmark Meta-Llama-3.1-405B with input 128 tokens, output 128 tokens and tensor parallelism 8 as an example,
+Benchmark Meta-Llama-3.1-405B FP8 with input 128 tokens, output 128 tokens and tensor parallelism 8 as an example,
 
     python /app/vllm/benchmarks/benchmark_throughput.py \
     --model /data/llm/Meta-Llama-3.1-405B-Instruct-FP8-KV \
     --quantization fp8 \
     --kv-cache-dtype fp8 \
     --dtype half \
+    --gpu-memory-utilization 0.99 \
+    --num-prompts 2000 \
+    --distributed-executor-backend mp \
+    --num-scheduler-steps 10 \
+    --tensor-parallel-size 8 \
+    --input-len 128 \
+    --output-len 128
+
+If you want to run Meta-Llama-3.1-405B FP16, please run
+
+    python /app/vllm/benchmarks/benchmark_throughput.py \
+    --model /data/llm/Meta-Llama-3.1-405B-Instruct \
+    --dtype float16 \
     --gpu-memory-utilization 0.99 \
     --num-prompts 2000 \
     --distributed-executor-backend mp \
@@ -272,6 +297,7 @@ Set GPUs in CPX mode
     rocm-smi --setcomputepartition cpx
  
 Example of running Llama3.1-8B on 1 CPX-NPS1 GPU with input 4096 and output 512. As mentioned above, tp=1.
+
     HIP_VISIBLE_DEVICES=0 \
     python3 /app/vllm/benchmarks/benchmark_throughput.py \
     --max-model-len 4608 \
@@ -287,6 +313,7 @@ Example of running Llama3.1-8B on 1 CPX-NPS1 GPU with input 4096 and output 512.
     --gpu-memory-utilization 0.99
  
 Set GPU to SPX mode.
+
     rocm-smi --setcomputepartition spx
 
 ### MMLU_PRO_Biology Accuracy Eval
