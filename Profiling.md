@@ -49,11 +49,13 @@ While scaling the RegNet+GPT workload to multiple nodes, we observed that some m
 
 First, we isolated just the GPT part and measured its multi-node scaling. We observed that the performance drop was small and the NCCL/RCCL communication kernels took ~1ms each:
  
-![image](https://github.com/user-attachments/assets/7ff839d4-43ab-4d7a-9a33-50e23d6919b4)
+![image](https://github.com/user-attachments/assets/d99aac8e-a5d5-4710-abfd-7c5fffc33fdb)
+
 
 Next we profiled the combined RegNet+GPT workload that showed very poor multinode scaling. The trace showed us that the communication kernels for the convolutional RegNet did not cause a major bottleneck and that the GPU utilization for this network was good. This ruled out any inefficiencies in the RegNet being the cause of the poor scaling. However, we noticed that the same communication kernels took around 500x longer in the combined RegNet+GPT case than in the isolated GPT case:
 
-![image](https://github.com/user-attachments/assets/80e80820-9936-47d7-84ca-22d51695f901)
+![image](https://github.com/user-attachments/assets/5f982ac8-5553-4f83-9b23-9ab9c89c1279)
+
 
 From this observation, we hypothesized that running the model with close to full GPU memory utilization causes smaller communication buffers to be allocated, resulting in greater transmission delay. 
 
@@ -70,6 +72,8 @@ In the RegNet+GPT workload, the random data generation and transfer to GPU memor
 
 ## Analyze memory consumption
  
+Prerequisite: [PyTorch - Understanding GPU Memory](https://pytorch.org/blog/understanding-gpu-memory-1/)
+
 To analyze memory usage during the training process, we can use PyTorch's CUDA memory management APIs to record memory events and generate memory snapshots. This provides detailed information about memory allocations and frees, which can be visualized for better understanding and optimization.
 
 ### Recording Memory History
@@ -82,7 +86,7 @@ def start_record_memory_history() -> None:
     if not torch.cuda.is_available():
         logger.info("CUDA unavailable. Not recording memory history")
         return
-logger.info("Starting snapshot record_memory_history")
+    logger.info("Starting snapshot record_memory_history")
     torch.cuda.memory._record_memory_history(
         max_entries=MAX_NUM_OF_MEM_EVENTS_PER_SNAPSHOT
     )
@@ -90,7 +94,7 @@ def stop_record_memory_history() -> None:
     if not torch.cuda.is_available():
         logger.info("CUDA unavailable. Not recording memory history")
         return
-logger.info("Stopping snapshot record_memory_history")
+    logger.info("Stopping snapshot record_memory_history")
     torch.cuda.memory._record_memory_history(enabled=None)
 ```
 
@@ -105,11 +109,13 @@ def export_memory_snapshot() -> None:
     if not torch.cuda.is_available():
         logger.info("CUDA unavailable. Not exporting memory snapshot")
         return
-# Prefix for file names.
+
+    # Prefix for file names.
     host_name = socket.gethostname()
     timestamp = datetime.now().strftime(TIME_FORMAT_STR)
     file_prefix = f"{host_name}_{timestamp}"
-try:
+
+    try:
         logger.info(f"Saving snapshot to local file: {file_prefix}.pickle")
         torch.cuda.memory._dump_snapshot(f"{file_prefix}.pickle")
     except Exception as e:
@@ -124,7 +130,8 @@ This method generates a memory snapshot and saves it as a `.pickle` file, which 
  
 ### Example of a Memory Profile:
 
-![image](https://github.com/user-attachments/assets/9622984b-c5c7-4128-9a8b-1274677762b4)
+![image](https://github.com/user-attachments/assets/b6493afc-c803-45a7-9ffb-985b673f9a9a)
+
 
 The image above illustrates a memory profile. The upward slope represents the forward pass where the activations are allocated, highlighting the increasing memory usage as more activations are stored. Conversely, the downward slope indicates the backward pass where gradients are computed and activations are deallocated, freeing up memory. The horizontal lines spanning the full timeline represent static memory, such as model parameters and optimizer state.
 Hovering over the user interface provides detailed information about memory allocations, including the memory address and the specific code trace that triggered the allocation. It also shows the size of each allocation, helping developers understand and optimize memory usage during model training.
