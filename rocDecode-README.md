@@ -2,7 +2,7 @@
 
 * Steps to run a basic videodecode C++ sample with AMD HW Video decoder using rocDecode library.
 
-* Step 1: Pull and run the docker
+### Step 1: Pull and run the docker
 > [!NOTE]
 usage: -v {LOCAL_HOST_DIRECTORY_PATH}:{DOCKER_DIRECTORY_PATH}
 
@@ -12,7 +12,7 @@ sudo docker pull powderluv/vllm_dev_channel:ROCm6.2_hipblaslt0.10.0_pytorch2.5_v
 sudo docker run -v <Map any data (videos) from bare-metal if required> -it --network=host --device=/dev/kfd --device=/dev/dri --ipc=host --shm-size 126G --group-add video --cap-add=SYS_PTRACE --security-opt seccomp=unconfined powderluv/vllm_dev_channel:ROCm6.2_hipblaslt0.10.0_pytorch2.5_vllm0.6.1_cython_09192024
 ```
 
-* Step 2: Inside the docker
+### Step 2: Inside the docker
 
 ```
 apt update
@@ -23,6 +23,8 @@ cmake /opt/rocm/share/rocdecode/samples/videoDecode/
 make -j
 ./videodecode -i /opt/rocm/share/rocdecode/video/AMD_driving_virtual_20-H265.mp4
 ```
+
+### Other details:
 
 * The above steps shows how to run the videoDecode sample on the docker with a smaple video provided by AMD. Any other HEVC/AVC video can be used on rocm 6.2 docker.
 
