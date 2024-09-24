@@ -119,7 +119,7 @@ try:
 
 ### Analysing memory snapshot pickle files
  
-This method generates a memory snapshot and saves it as a `.pickle` file, which can be visualized by dragging and dropping into the user interface provided by PyTorch at PyTorch Memory Visualization. This tool allows users to adjust the level of detail by filtering out smaller memory events to simplify the view.
+This method generates a memory snapshot and saves it as a `.pickle` file, which can be visualized by dragging and dropping into the user interface provided by PyTorch at [PyTorch Memory Visualization](https://pytorch.org/memory_viz). This tool allows users to adjust the level of detail by filtering out smaller memory events to simplify the view.
  
  
 ### Example of a Memory Profile:
