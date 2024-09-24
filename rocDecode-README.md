@@ -12,7 +12,37 @@ sudo docker pull powderluv/vllm_dev_channel:ROCm6.2_hipblaslt0.10.0_pytorch2.5_v
 sudo docker run -v <Map any data (videos) from bare-metal if required> -it --network=host --device=/dev/kfd --device=/dev/dri --ipc=host --shm-size 126G --group-add video --cap-add=SYS_PTRACE --security-opt seccomp=unconfined powderluv/vllm_dev_channel:ROCm6.2_hipblaslt0.10.0_pytorch2.5_vllm0.6.1_cython_09192024
 ```
 
-### Step 2: Inside the docker
+## Sample 1:
+
+### Step 2: Inside the docker - performance scripts (please follow this initially to see performance numbers)
+
+```
+apt update
+apt install rocdecode rocdecode-dev rocdecode-test
+mkdir rocdecode-sample
+cd rocdecode-sample/
+cmake /opt/rocm/share/rocdecode/samples/videoDecodePerf/
+make -j
+./videodecodeperf -i /opt/rocm/share/rocdecode/video/AMD_driving_virtual_20-H265.mp4 -t 4
+```
+
+### Other details:
+
+* To get a list of all the parameters that can be passed to the sample, there is a help option.
+
+```
+./videodecodeperf -h
+Options:
+-i Input File Path - required
+-t Number of threads (>= 1) - optional; default: 4
+-d Device ID (>= 0)  - optional; default: 0
+-z force_zero_latency (force_zero_latency, Decoded frames will be flushed out for display immediately); optional;
+```
+
+
+## Sample 2:
+
+### Step 2: Inside the docker - script to actaully get the frame and do operations on it
 
 ```
 apt update
@@ -26,7 +56,7 @@ make -j
 
 ### Other details:
 
-* The above steps shows how to run the videoDecode sample on the docker with a smaple video provided by AMD. Any other HEVC/AVC video can be used on rocm 6.2 docker.
+* The above steps shows how to run the videoDecode sample on the docker with a sample video provided by AMD. Any other HEVC/AVC video can be used on rocm 6.2 docker.
 
 * To get a list of all the parameters that can be passed to the smaple, there is a help option.
 
