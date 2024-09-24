@@ -48,6 +48,6 @@ Options:
 -seek_mode - Seek to previous key frame or exact - optional; default - 0[0: SEEK_MODE_PREV_KEY_FRAME; 1: SEEK_MODE_EXACT_FRAME]
 ```
 
-* THere are other samples available inside `/opt/rocm/share/rocdecode/samples/` with a help menu for each sample.
+* There are other samples available inside `/opt/rocm/share/rocdecode/samples/` with a help menu for each sample.
 
 * Details for all these samples can be found in the main GitHub repo for rocDecode for rocm 6.2: https://github.com/ROCm/rocDecode/tree/release/rocm-rel-6.2/samples
