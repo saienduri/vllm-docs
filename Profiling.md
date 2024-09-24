@@ -10,12 +10,19 @@ from torch.profiler import profile, record_function, ProfilerActivity
 ```
 
 
-Define a trace handler function to export the trace in a format suitable for trace viewers like Perfetto or Chrome trace viewer:
+## Trace Handler for Distributed Training
+In a distributed training setup, where multiple processes (or GPUs) are involved, it's essential to ensure that each process writes to a separate trace file to avoid race conditions. You can achieve this by including the process rank in the trace filename. The trace files generated can then be visualized using tools like Perfetto or Chrome trace viewer.
+
+Ensure that the directory where traces are stored has the proper write permissions for all processes.
+
 ```python
 def trace_handler(p):
-    output = p.key_averages().table(sort_by="self_cuda_time_total", row_limit=10)
-    print(output)
-    p.export_chrome_trace(“/path/to/traces/trace.json”)
+    # Get the rank of the current process (GPU)
+    rank = torch.distributed.get_rank() if torch.distributed.is_initialized() else 0
+    # Generate a unique trace file for each process using its rank
+    trace_filename = f"/path/to/traces/trace_model_size_rank{rank}_step{p.step_num}.json"
+    # Export the trace for analysis in Perfetto or Chrome tracing
+    p.export_chrome_trace(trace_filename)
 ```
 
 Wrap the training loop in this profiling context to capture the trace. Make sure that everything you want to capture (dataloading, communication, checkpointing, etc) is included within this context. Step forward the profiler at the end of each training iteration.
