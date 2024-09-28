@@ -43,7 +43,7 @@ The performance data below was measured on a server with MI300X accelerators wit
 
 The Docker images are available in [Docker HUB](https://hub.docker.com/repository/docker/powderluv/vllm_dev_channel/general)
 
-You can pull the image with `docker pull powderluv/vllm_dev_channel:ROCm6.2_hipblaslt0.10.0_pytorch2.5_vllm0.6.1_cython_09192024`
+You can pull the image with `docker pull powderluv/vllm_dev_channel`
 
 
 ## Reproducing benchmark results
