@@ -45,6 +45,11 @@ The Docker images are available in [Docker HUB](https://hub.docker.com/repositor
 
 You can pull the image with `docker pull powderluv/vllm_dev_channel`
 
+### What is New
+
+   · Add tracing capabilities to the benchmark suite of scripts. Allowing for --rpd-profile to be used to gather necessary trace data to analyze benchmark performance.
+
+   · Mixtral 8x22B FP8 bug fix
 
 ## Reproducing benchmark results
 
@@ -125,7 +130,7 @@ Download and launch the docker,
     --cap-add=CAP_SYS_ADMIN --cap-add=SYS_PTRACE \
     --device=/dev/kfd --device=/dev/dri --device=/dev/mem \
     -v /data/llama-3.1:/data/llm \
-    powderluv/vllm_dev_channel:ROCm6.2_hipblaslt0.10.0_pytorch2.5_vllm0.6.1_cython_09192024
+    docker pull powderluv/vllm_dev_channel
 
 
 ### Benchmark with AMD vLLM Docker
