@@ -41,9 +41,7 @@ The performance data below was measured on a server with MI300X accelerators wit
 
 ## Pull latest Docker
 
-The Docker images are available in [Docker HUB](https://hub.docker.com/repository/docker/powderluv/vllm_dev_channel/general)
-
-You can pull the image with `docker pull powderluv/vllm_dev_channel`
+You can pull the image with `docker pull ghcr.io/saienduri/vllm:20241004`
 
 ### What is New
 
