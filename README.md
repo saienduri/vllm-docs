@@ -45,10 +45,8 @@ You can pull the image with `docker pull ghcr.io/saienduri/vllm:20241004`
 
 ### What is New
 
-   · Add tracing capabilities to the benchmark suite of scripts. Allowing for --rpd-profile to be used to gather necessary trace data to analyze benchmark performance.
-
-   · Mixtral 8x22B FP8 bug fix
-
+   · GEMMs tuning charts
+   
 ## Reproducing benchmark results
 
 ### Use pre-quantized models
