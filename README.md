@@ -41,7 +41,9 @@ The performance data below was measured on a server with MI300X accelerators wit
 
 ## Pull latest Docker
 
-You can pull the image with `docker pull rocm/vllm-dev:vllm-20241009-tuned`
+You can pull the base image with `docker pull rocm/vllm-dev:vllm-20241009`
+
+You can pull the image with gemm tunings with `docker pull rocm/vllm-dev:vllm-20241009-tuned`
 
 ### What is New
 
