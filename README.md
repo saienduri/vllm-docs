@@ -41,13 +41,24 @@ The performance data below was measured on a server with MI300X accelerators wit
 
 ## Pull latest Docker
 
-You can pull the image with `docker pull ghcr.io/saienduri/vllm:20241004`
+You can pull the image with `docker pull rocm/vllm-dev:vllm-20241009-tuned`
 
 ### What is New
 
-   · GEMMs tuning charts
-   
-## Reproducing benchmark results
+   . Directly write out FP8 from decode PA kernel 
+   . Hipgraph support  for context of 128k
+   . Increase custom PA support to 128K length
+   . LLAMA 3.2 (functional)
+   . Custom all reduce optimizations
+   · Decode GEMMs have been tuned for llama 3.1 models
+      . LLAMA 3.1 8B TP=1, Batch sizes 1 2 4 8 16 32 64 128 256
+      . LLAMA 3.1 70B TP=1,8, Batch sizes 1 2 4 8 16 32 64 128 256
+      . LLAMA 3.1 405B TP=8, Batch sizes 1 2 4 8 16 32 64 128 256
+     
+Gemms are tuned using PyTorch's Tunable Ops  feature (https://github.com/pytorch/pytorch/blob/main/aten/src/ATen/cuda/tunable/README.md)
+The tuned gemms are automatically enabled in the docker image, and all stored gemm configs are kept in /app/tuned_gemm_csv in the same image
+
+### Reproducing benchmark results
 
 ### Use pre-quantized models
 
@@ -126,8 +137,7 @@ Download and launch the docker,
     --cap-add=CAP_SYS_ADMIN --cap-add=SYS_PTRACE \
     --device=/dev/kfd --device=/dev/dri --device=/dev/mem \
     -v /data/llama-3.1:/data/llm \
-    docker pull powderluv/vllm_dev_channel
-
+    docker pull rocm/vllm-dev:vllm-20241009-tuned
 
 ### Benchmark with AMD vLLM Docker
 
@@ -153,11 +163,9 @@ Some environment variables enhance the performance of the vLLM kernels and PyTor
 ##### vLLM performance settings
 
     export PYTORCH_TUNABLEOP_ENABLED=1
-    export PYTORCH_TUNABLEOP_ROCBLAS_ENABLED=0
     export PYTORCH_TUNABLEOP_TUNING=1
     export HIP_FORCE_DEV_KERNARG=1
     export VLLM_USE_ROCM_CUSTOM_PAGED_ATTN=1
-    export VLLM_USE_TRITON_FLASH_ATTN=0
     export VLLM_USE_TRITON_FLASH_ATTN=0
     export VLLM_INSTALL_PUNICA_KERNELS=1
     export TOKENIZERS_PARALLELISM=false
@@ -351,13 +359,15 @@ torchvision: https://github.com/ROCm/vision/commit/fab848869c0f88802297bad43c0ad
 
 vLLM: https://github.com/ROCm/vllm/commit/6f35c77845068dcc90c222fdfd1b56c3db149ad1
 
+### Known Issues
+Llama 3.1 8B may show regressions which will be fixed in the upcoming docker release. For now, you  may want to use the previous docker to test Lllama 3.1 8B.
 
 ### Docker Manifest
-ROCm6.2 GA
+ROCm6.2 GA + patches
 tip-of-tree (hipBLASLT, rocBLAS, Flash-attention, CK, Triton, MIOpen, RCCL, Apex)
 Python 3.9
 Ubuntu 22
-PyTorch 2.4 Release
+PyTorch 2.5dev (nightly)
 
  
 
