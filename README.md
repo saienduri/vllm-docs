@@ -46,14 +46,23 @@ You can pull the image with `docker pull rocm/vllm-dev:vllm-20241009-tuned`
 ### What is New
 
    . Directly write out FP8 from decode PA kernel 
+   
    . Hipgraph support  for context of 128k
+   
    . Increase custom PA support to 128K length
+   
    . LLAMA 3.2 (functional)
+   
    . Custom all reduce optimizations
+   
    · Decode GEMMs have been tuned for llama 3.1 models
+   
       . LLAMA 3.1 8B TP=1, Batch sizes 1 2 4 8 16 32 64 128 256
+      
       . LLAMA 3.1 70B TP=1,8, Batch sizes 1 2 4 8 16 32 64 128 256
+      
       . LLAMA 3.1 405B TP=8, Batch sizes 1 2 4 8 16 32 64 128 256
+      
      
 Gemms are tuned using PyTorch's Tunable Ops  feature (https://github.com/pytorch/pytorch/blob/main/aten/src/ATen/cuda/tunable/README.md)
 The tuned gemms are automatically enabled in the docker image, and all stored gemm configs are kept in /app/tuned_gemm_csv in the same image
