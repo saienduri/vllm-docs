@@ -45,23 +45,7 @@ You can pull the image with `docker pull rocm/vllm-dev:vllm-20241009-tuned`
 
 ### What is New
 
-   . Directly write out FP8 from decode PA kernel 
-   
-   . Hipgraph support  for context of 128k
-   
-   . Increase custom PA support to 128K length
-   
-   . LLAMA 3.2 (functional)
-   
-   . Custom all reduce optimizations
-   
-   · Decode GEMMs have been tuned for llama 3.1 models
-   
-      . LLAMA 3.1 8B TP=1, Batch sizes 1 2 4 8 16 32 64 128 256
-      
-      . LLAMA 3.1 70B TP=1,8, Batch sizes 1 2 4 8 16 32 64 128 256
-      
-      . LLAMA 3.1 405B TP=8, Batch sizes 1 2 4 8 16 32 64 128 256
+   . Workaround for 7B regression
       
      
 Gemms are tuned using PyTorch's Tunable Ops  feature (https://github.com/pytorch/pytorch/blob/main/aten/src/ATen/cuda/tunable/README.md)
@@ -171,25 +155,32 @@ Some environment variables enhance the performance of the vLLM kernels and PyTor
 
 ##### vLLM performance settings
 
-    export PYTORCH_TUNABLEOP_ENABLED=1
-    export PYTORCH_TUNABLEOP_TUNING=1
-    export HIP_FORCE_DEV_KERNARG=1
-    export VLLM_USE_ROCM_CUSTOM_PAGED_ATTN=1
     export VLLM_USE_TRITON_FLASH_ATTN=0
-    export VLLM_INSTALL_PUNICA_KERNELS=1
-    export TOKENIZERS_PARALLELISM=false
-    export RAY_EXPERIMENTAL_NOSET_ROCR_VISIBLE_DEVICES=1
     export NCCL_MIN_NCHANNELS=112
     export VLLM_FP8_PADDING=1
-    export VLLM_FP8_ACT_PADDING=1
-    export VLLM_FP8_WEIGHT_PADDING=1
-    export VLLM_FP8_REDUCE_CONV=1
-    export VLLM_SCHED_PREFILL_KVC_FREEPCT=31.0
 
 You can set both PYTORCH_TUNABLEOP_ENABLED and PYTORCH_TUNABLEOP_TUNING to 1 to performance GEMM tuning for the 1st benchmark run. 
 It will take some time to complete the tuning during the benchmark. After tuning, it will generate several csv files as the performance lookup database. For the subsequent benchmark runs, you can keep PYTORCH_TUNABLEOP_ENABLED as 1 and set 
 PYTORCH_TUNABLEOP_TUNING to 0 to use the selected kernels. 
 
+#### Limited Online Tuning for Llama 70B upto Batch size 8
+
+If you want to do limited online tuning use --enforce-eager and tun for particular batch sizes. See example below.
+
+export PYTORCH_TUNABLEOP_TUNING=1
+export PYTORCH_TUNABLEOP_ENABLED=1
+export PYTORCH_TUNABLEOP_MAX_TUNING_DURATION_MS=100
+export PYTORCH_TUNABLEOP_MAX_WARMUP_DURATION_MS=10
+export PYTORCH_TUNABLEOP_ROTATING_BUFFER_SIZE=1024
+export PYTORCH_TUNABLEOP_FILENAME=/app/tuned_gemm_csv/bench_latency_tune_device_%d_full.csv
+
+ Run the following command for BS=1/2/4/8:
+
+python /app/vllm/benchmarks/benchmark_latency.py --model <path to Meta-Llama-3.1-70B-Instruct-FP8-KV> --quantization fp8 --kv-cache-dtype fp8 --dtype float16 --max-model-len 8192 --num-iters-warmup 5 --num-iters 5 --tensor-parallel-size 8 --input-len 4096 --output-len 512 --batch-size <BS> --num-scheduler-steps 10 --enforce-eager
+
+The tuned file will be generated for device 0 only at /app/tuned_gemm_csv/bench_latency_tune_device_0_full.csv. Copy this file to /app/tuned_gemm_csv/bench_latency_tune_device_<D>_full.csv for D=1 through 7.
+
+After the above steps, retain the environment variables set earlier, but set export PYTORCH_TUNABLEOP_TUNING=0 to disable online tuning, and use the tuned solutions.
 
 ##### Latency Benchmark
 
@@ -241,7 +232,7 @@ Benchmark Meta-Llama-3.1-405B FP8 with input 128 tokens, output 128 tokens and t
     --num-scheduler-steps 10 \
     --tensor-parallel-size 8 \
     --input-len 128 \
-    --output-len 128
+    --output-len 128 
 
 If you want to run Meta-Llama-3.1-405B FP16, please run
 
@@ -254,7 +245,15 @@ If you want to run Meta-Llama-3.1-405B FP16, please run
     --num-scheduler-steps 10 \
     --tensor-parallel-size 8 \
     --input-len 128 \
-    --output-len 128
+    --output-len 128 \
+    --swapspace 16 \
+    --max-model-length 8192 \
+    --max-num-batched-tokens 65536 \
+    --gpu-memory-utilization 0.99
+
+For fp8 quantized Llama3.18B/70B models:
+   Recommend TP:1 for Llama3.1-8B, 8 for Llama3.1-70B
+   Recommend NSCHED: 10 for Llama3.1-8B, 8 for Llama3.1-70B
 
 You can change various input-len, output-len, num-prompts and run the benchmark as well.
 Please note num-scheduler-step is a new feature added in vLLM 0.6.0. It can improve the decoding latency and throughput, however, it may increase the prefill latency.
