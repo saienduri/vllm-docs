@@ -10,11 +10,11 @@ This documentation shows some reference performance numbers and the steps to rep
 
 It includes:
 
-   · ROCm™ 6.2
+   -  ROCm™ 6.2
 
-   · vLLM 0.6.1
+   - vLLM 0.6.1
 
-   · PyTorch 2.5dev (nightly)
+   - PyTorch 2.5dev (nightly)
 
 ## System configuration
 
@@ -45,7 +45,7 @@ You can pull the image with `docker pull rocm/vllm-dev:vllm-20241009-tuned`
 
 ### What is New
 
-   . Workaround for 7B regression
+   - Workaround for 7B regression
       
      
 Gemms are tuned using PyTorch's Tunable Ops  feature (https://github.com/pytorch/pytorch/blob/main/aten/src/ATen/cuda/tunable/README.md)
@@ -160,7 +160,9 @@ Some environment variables enhance the performance of the vLLM kernels and PyTor
     export VLLM_FP8_PADDING=1
 
 You can set both PYTORCH_TUNABLEOP_ENABLED and PYTORCH_TUNABLEOP_TUNING to 1 to performance GEMM tuning for the 1st benchmark run. 
-It will take some time to complete the tuning during the benchmark. After tuning, it will generate several csv files as the performance lookup database. For the subsequent benchmark runs, you can keep PYTORCH_TUNABLEOP_ENABLED as 1 and set 
+It will take some time to complete the tuning during the benchmark. After tuning, it will generate several csv files as the performance lookup database. For the subsequent benchmark runs, you can keep 
+
+PYTORCH_TUNABLEOP_ENABLED as 1 and set 
 PYTORCH_TUNABLEOP_TUNING to 0 to use the selected kernels. 
 
 #### Limited Online Tuning for Llama 70B upto Batch size 8
@@ -176,20 +178,20 @@ If you want to do limited online tuning use --enforce-eager and tun for particul
 
  Run the following command for BS=1/2/4/8:
 
-python /app/vllm/benchmarks/benchmark_latency.py \
---model <path to Meta-Llama-3.1-70B-Instruct-FP8-KV> \
---quantization fp8 \
---kv-cache-dtype fp8 \
---dtype float16 \
---max-model-len 8192 \
---num-iters-warmup 5 \
---num-iters 5 \
---tensor-parallel-size 8 \
---input-len 4096 \
---output-len 512 \
---batch-size <BS> \
---num-scheduler-steps 10 \
---enforce-eager
+   python /app/vllm/benchmarks/benchmark_latency.py \
+   --model <path to Meta-Llama-3.1-70B-Instruct-FP8-KV> \
+   --quantization fp8 \
+   --kv-cache-dtype fp8 \
+   --dtype float16 \
+   --max-model-len 8192 \
+   --num-iters-warmup 5 \
+   --num-iters 5 \
+   --tensor-parallel-size 8 \
+   --input-len 4096 \
+   --output-len 512 \
+   --batch-size <BS> \
+   --num-scheduler-steps 10 \
+   --enforce-eager
 
 The tuned file will be generated for device 0 only at /app/tuned_gemm_csv/bench_latency_tune_device_0_full.csv. Copy this file to /app/tuned_gemm_csv/bench_latency_tune_device_<D>_full.csv for D=1 through 7.
 
@@ -265,6 +267,7 @@ If you want to run Meta-Llama-3.1-405B FP16, please run
     --gpu-memory-utilization 0.99
 
 For fp8 quantized Llama3.18B/70B models:
+
    Recommend TP:1 for Llama3.1-8B, 8 for Llama3.1-70B
    Recommend NSCHED: 10 for Llama3.1-8B, 8 for Llama3.1-70B
 
