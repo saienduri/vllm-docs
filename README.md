@@ -176,7 +176,20 @@ If you want to do limited online tuning use --enforce-eager and tun for particul
 
  Run the following command for BS=1/2/4/8:
 
-python /app/vllm/benchmarks/benchmark_latency.py --model <path to Meta-Llama-3.1-70B-Instruct-FP8-KV> --quantization fp8 --kv-cache-dtype fp8 --dtype float16 --max-model-len 8192 --num-iters-warmup 5 --num-iters 5 --tensor-parallel-size 8 --input-len 4096 --output-len 512 --batch-size <BS> --num-scheduler-steps 10 --enforce-eager
+python /app/vllm/benchmarks/benchmark_latency.py \
+--model <path to Meta-Llama-3.1-70B-Instruct-FP8-KV> \
+--quantization fp8 \
+--kv-cache-dtype fp8 \
+--dtype float16 \
+--max-model-len 8192 \
+--num-iters-warmup 5 \
+--num-iters 5 \
+--tensor-parallel-size 8 \
+--input-len 4096 \
+--output-len 512 \
+--batch-size <BS> \
+--num-scheduler-steps 10 \
+--enforce-eager
 
 The tuned file will be generated for device 0 only at /app/tuned_gemm_csv/bench_latency_tune_device_0_full.csv. Copy this file to /app/tuned_gemm_csv/bench_latency_tune_device_<D>_full.csv for D=1 through 7.
 
