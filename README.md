@@ -167,12 +167,12 @@ PYTORCH_TUNABLEOP_TUNING to 0 to use the selected kernels.
 
 If you want to do limited online tuning use --enforce-eager and tun for particular batch sizes. See example below.
 
-export PYTORCH_TUNABLEOP_TUNING=1
-export PYTORCH_TUNABLEOP_ENABLED=1
-export PYTORCH_TUNABLEOP_MAX_TUNING_DURATION_MS=100
-export PYTORCH_TUNABLEOP_MAX_WARMUP_DURATION_MS=10
-export PYTORCH_TUNABLEOP_ROTATING_BUFFER_SIZE=1024
-export PYTORCH_TUNABLEOP_FILENAME=/app/tuned_gemm_csv/bench_latency_tune_device_%d_full.csv
+   export PYTORCH_TUNABLEOP_TUNING=1
+   export PYTORCH_TUNABLEOP_ENABLED=1
+   export PYTORCH_TUNABLEOP_MAX_TUNING_DURATION_MS=100
+   export PYTORCH_TUNABLEOP_MAX_WARMUP_DURATION_MS=10
+   export PYTORCH_TUNABLEOP_ROTATING_BUFFER_SIZE=1024
+   export PYTORCH_TUNABLEOP_FILENAME=/app/tuned_gemm_csv/bench_latency_tune_device_%d_full.csv
 
  Run the following command for BS=1/2/4/8:
 
