@@ -41,7 +41,7 @@ The performance data below was measured on a server with MI300X accelerators wit
 
 ## Pull latest Docker
 
-You can pull the image with `docker pull rocm/vllm-dev:vllm-20241009-tuned`
+You can pull the image with `docker pull rocm/vllm-dev:20241018`
 
 ### What is New
 
@@ -130,7 +130,7 @@ Download and launch the docker,
     --cap-add=CAP_SYS_ADMIN --cap-add=SYS_PTRACE \
     --device=/dev/kfd --device=/dev/dri --device=/dev/mem \
     -v /data/llama-3.1:/data/llm \
-    docker pull rocm/vllm-dev:vllm-20241009-tuned
+    docker pull rocm/vllm-dev:20241018
 
 ### Benchmark with AMD vLLM Docker
 
@@ -382,9 +382,6 @@ Updated:
 torchvision: https://github.com/ROCm/vision/commit/fab848869c0f88802297bad43c0ad80f33ecabb4/
 
 vLLM: https://github.com/ROCm/vllm/commit/6f35c77845068dcc90c222fdfd1b56c3db149ad1
-
-### Known Issues
-Llama 3.1 8B may show regressions which will be fixed in the upcoming docker release. For now, you  may want to use the previous docker to test Lllama 3.1 8B.
 
 ### Docker Manifest
 ROCm6.2 GA + patches
